@@ -40,6 +40,12 @@ After migrations, add `reorder_maps.py` to core Arches views folder
 ## Step 4
 ### New URL
 
+At the top of urls.py add the following new import
+
+```
+from arches.app.views.reorder_maps import ReorderMaps
+```
+
 Add the following url path to the bottom of `urlpatterns` in `urls.py` in your core Arches folder
 ```
 url(r"^reorder_maps", ReorderMaps.as_view(), name ="reorder_maps"),
@@ -92,6 +98,20 @@ And under `resource_map_layers` add the following
 
 ```
 'layersortorder': {{resource_map_layer.layersortorder|default_if_none:"null"|unlocalize}}
+```
+
+
+## Step 7
+### Datatypes.py changes
+
+In the function `def get_map_layer` add the following
+```
+layersortorder = node.layersortorder
+```
+
+At the bottom of layer_def, in the return JSON add the following
+```
+"layersortorder": layersortorder
 ```
 
 # TODOs
