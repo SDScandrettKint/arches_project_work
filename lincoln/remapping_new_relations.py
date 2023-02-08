@@ -55,8 +55,6 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
     newrelationval["resourceId"] = residto
     newrelationval["resourceXresourceId"] = str(uuid.uuid4())
     if relationshiptype:
-        #shortened_relation = relationshiptype.replace("http://www.cidoc-crm.org/cidoc-crm/", "")
-        #newrelationval["ontologyProperty"] = shortened_relation
         newrelationval["ontologyProperty"] = relationshiptype
     if inverserelation:
         newrelationval["inverseOntologyProperty"] = inverserelation
@@ -66,35 +64,54 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
     # can go through the resource CSV and filter for that resource id FROM index
     if residfrom in resource_df['ResourceID'].values:
         res_index = (resource_df[resource_df["ResourceID"]==residfrom].index.values)
-        
 
-    # Find correct node from graph UUID dictionary and get it's column index
-    for key, value in modelUUID_dict.items():
-        if value == graphidto:
-            assoc_node_index = resource_df.columns.get_loc(key)
+        # Find correct node from graph UUID dictionary and get it's column index
+        for key, value in modelUUID_dict.items():
+            if value == graphidto:
+                assoc_node_index = resource_df.columns.get_loc(key)
+                
+                # To detect if a cell is empty requires the following that must be converted into str
+                isempty = pd.isnull(resource_df.iloc[res_index,assoc_node_index].item())
+
+                # Empty or NaN should return True, so if is empty can add the list
+                if isempty == True:
+                   # print("Is the cell empty?", isempty)
+                    emptylist = []
+                    emptylist.append(newrelationval)
+                    resource_df.iloc[res_index,assoc_node_index] = str(emptylist)
+
+                # If the cell is already populated (needs a second relation adding)
+                elif isempty == False:
+                   # print("Is the cell empty?", isempty)
+                    existing = (resource_df.iloc[res_index,assoc_node_index].item()) # Str of existing data
+
+                    # Remove trailing "]"
+                    existing_strp = existing.rstrip("]")
+                    # Add a comma and the new relation data then end with a ]
+                    additional = existing_strp + (", %s]" % (newrelationval)) 
+
+                    resource_df.iloc[res_index,assoc_node_index] = str(additional)   
             
-            # To detect if a cell is empty requires the following that must be converted into str
-            isempty = pd.isnull(resource_df.iloc[res_index,assoc_node_index].item())
 
-            # Empty or NaN should return True, so if is empty can add the list
-            if isempty == True:
-                #print("Is the cell empty?", isempty)
-                emptylist = []
-                emptylist.append(newrelationval)
-                resource_df.iloc[res_index,assoc_node_index] = str(emptylist)            
+# Pandas converts names of duplicate columns into +".1"
+# Use this code to prevent that from occurring ensuring correct mapping
+colMap = []
 
-            # If the cell is already populated (needs a second relation adding)
-            elif isempty == False:
-                #print("Is the cell empty?", isempty)
-                existing = (resource_df.iloc[res_index,assoc_node_index].item()) # Str of existing data
+for col in resource_df.columns:
+    if col.rpartition('.')[0]:
+        colName = col.rpartition('.')[0]
+        inMap = col.rpartition('.')[0] in colMap
+        lastIsNum = col.rpartition('.')[-1].isdigit()
+        dupeCount = colMap.count(colName)
 
-                # Remove trailing "]"
-                existing_strp = existing.rstrip("]")
-                # Add a comma and the new relation data then end with a ]
-                additional = existing_strp + (", %s]" % (newrelationval)) 
-
-                resource_df.iloc[res_index,assoc_node_index] = str(additional)            
+        if inMap and lastIsNum and (int(col.rpartition('.')[-1]) == dupeCount):
+            colMap.append(colName)
+            continue
+    colMap.append(col)
+        
+resource_df.columns = colMap  
 
 
+# Write output to CSV
 resource_df.to_csv(('%s.csv' % (final_name)), index=False)
-
+print("CSV Written")
