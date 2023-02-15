@@ -57,9 +57,10 @@ allrelations_filtered = allrelations_df[graphfilter]
 
 
 # Variables that are specific to each model
-bibsource_node = "dc17b6e9-eff3-11eb-9210-a87eeabdefba"
-person_node = "e6ab4ed0-905b-11ea-8e3f-f875a44e0e11"
-lincolnassocnode = "ca2651f1-a637-11ed-bf2c-679a3495f33a"
+target_node_one = "918b5530-ad43-11ed-bf2c-679a3495f33a"
+lincolnassocnode = "cd0e2a19-a62e-11ed-bf2c-679a3495f33a"
+
+
 
 # Open JSON and store
 with open(JSON_file) as f:
@@ -86,7 +87,6 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
                 # Go through each resources data in the JSON file
                 if resource_UUID == residfrom:
                     
-                    print("\nResource: %s" % (resource_UUID))
                     tile_len_res = len(resource["tiles"])
                     no_falses = 0
 
@@ -95,33 +95,37 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
                         # so tile data is within an array in a dictionary
 
                         for tilesuuid, tilesvalues in alltile.items():
+                            #print(tilesuuid, tilesvalues)
                             # If the current nodegroup id isnt target node then doesnodeexist is false
                             doesnodeexist = False
 
-                            # FIRST check if the lincoln associated nodegroup exists and if so delete
+                            # FIRST check if the lincoln associated nodegroup exists and if so set to null and empty relations list 
                             if tilesuuid == 'nodegroup_id' and tilesvalues == lincolnassocnode:
-                                resource["tiles"].remove(alltile)
+                                for oldkey, oldval in alltile["data"].items():
+                                    if type(oldval) == list:
+                                        oldval.clear()
+
+                                #resource["tiles"].remove(alltile)
+                                
 
                             # Now onto adding the new tiles
                             # If it is target node set doesnodeexist to true and add to it
-                            if tilesuuid == 'nodegroup_id' and tilesvalues == person_node:
+                            if tilesuuid == 'nodegroup_id' and tilesvalues == target_node_one:
                                 doesnodeexist = True
                                 # Does the json already contain the correct data or is there more that needs adding?
-                                for existing_rel_data in alltile["data"][person_node]:
+                                for existing_rel_data in alltile["data"][target_node_one]:
                                     
                                     if existing_rel_data["resourceId"] == residto:
                                         break
                                     else: # Add the new ones
                                         additionalOne = additionaltile(relationshiptype, inverserelation, residto)
-                                        alltile["data"][person_node].append(additionalOne)
+                                        alltile["data"][target_node_one].append(additionalOne)
                                         break
 
 
                             # If doesnodeexist is true break out of that block
                             if doesnodeexist == True:
                                 break
-
-
 
 
                         # Count the number of falses
@@ -133,7 +137,7 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
                         # the number of falses will equal the length of the resource tiles
                         # then ADD THE TILE:
                         if tile_len_res == no_falses:
-                            newtile = inserttile(person_node, relationshiptype, inverserelation, residto, residfrom)
+                            newtile = inserttile(target_node_one, relationshiptype, inverserelation, residto, residfrom)
                             resource["tiles"].append(newtile)
                             no_falses += 1 # Set higher so it can't loop forever
                             break
@@ -141,14 +145,6 @@ for residfrom, residto, relationshiptype, inverserelation, graphidto in zip(
 
 
 ### Return JSON converted data
-#print(res_data)
-finaldata = json.dumps(res_data)
-print(finaldata)
 # Save JSON output to name specified by cli                   
 with open ("%s.json" % (outputfilename), "w") as out_file:
     json.dump(res_data, out_file)
-                            
-
-
-    
-
