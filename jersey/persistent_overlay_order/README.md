@@ -71,7 +71,7 @@ In `map.js` found in `media > js > viewmodels` in your core Arches folder add th
             }
             
             $.ajax({
-                type: "POST",
+                type: "PUT",
                 data: JSON.stringify({
                     map_order: new_order
                 }),
@@ -82,7 +82,7 @@ In `map.js` found in `media > js > viewmodels` in your core Arches folder add th
 
 and a sorting function below `var mapLayers` found on line `135`
 ```
-mapLayers = mapLayers.sort((a, b) => parseInt(a.layersortorder) - parseInt(b.layersortorder))
+mapLayers = mapLayers.sort((a, b) => a.layersortorder - b.layersortorder)
 ```
 
 
