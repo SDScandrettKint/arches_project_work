@@ -12,7 +12,7 @@ from django.http import HttpResponse
 #Decorators
 @method_decorator(can_edit_resource_instance, name="dispatch")
 class ReorderMaps(BaseManagerView):
-    def post(self, request):
+    def put(self, request):
 
         json = request.body
         data = JSONDeserializer().deserialize(json)
